@@ -1,0 +1,50 @@
+version: "3.7"
+
+services:
+    backend-laravel:
+        build:
+            args:
+                user: sammy
+                uid: 1000
+            context: ./docker-files/backend/
+            dockerfile: Dockerfile
+        restart: on-failure
+        env_file: .env
+        container_name: backend
+        image: backend/${PROJECTNAME}
+        volumes:
+          - ./projects/backend-laravel:/app-backend
+        ports: 
+            - 9000:9000
+        
+    db:
+        image: mysql:5.6
+        platform: linux/x86_64
+        container_name: database-todo
+        restart: on-failure
+        env_file: .env
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+            SERVICE_TAGS: dev
+            SERVICE_NAME: mysql
+        volumes:
+            - ./database-mysql:/docker-entrypoint-initdb.d
+        ports:
+            - 33069:3306
+
+    nginx:
+        image: nginx:1.15-alpine
+        restart: on-failure
+        env_file: .env
+        container_name: laravel-react-nginx
+        working_dir: /
+        ports:
+            - "80:80"
+        environment:
+            VIRTUAL_HOST: ${VIRTUAL_HOST_BACKEND}
+        volumes:
+            - ./projects/backend-laravel/:/app-backend
+            - ./docker-files/nginx/default.conf:/etc/nginx/conf.d/default.conf
